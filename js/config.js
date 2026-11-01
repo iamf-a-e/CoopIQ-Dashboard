@@ -10,7 +10,7 @@ const CFG = {
     diagnoses: "diagnoses",        // created_at, farmer_name, pen, species, condition, confidence, status, channel
     sensors:   "sensor_readings",  // created_at, pen, movement, sound, temp, humidity
     visits:    "farm_visits",      // created_at, farmer_name, location, reason, status, preferred_date
-    requests:  "agrovet_requests", // created_at, farmer_name, urgency, message, status
+    requests:  "consultations", // created_at, farmer_name, urgency, message, status
     convs:     "conversations",    // id, updated_at, name, phone, last_message, status, needs_reply
     msgs:      "messages"          // conversation_id, created_at, direction ('in'|'out'), body
   },
