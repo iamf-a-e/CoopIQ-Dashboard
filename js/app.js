@@ -96,12 +96,23 @@ async function pullConvs() {
   }).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 }
 
+/* farm_visits columns differ from what the dashboard expects (e.g. "name" instead of "farmer_name").
+   Map likely column names onto the fields the pages read. Adjust the right-hand names to match your table. */
+const normVisit = v => ({
+  ...v,
+  farmer_name:    v.farmer_name ?? v.name ?? "",
+  location:       v.location ?? v.farm_location ?? v.address ?? v.district ?? "",
+  reason:         v.reason ?? v.visit_type ?? v.purpose ?? v.notes ?? "",
+  preferred_date: v.preferred_date ?? v.visit_date ?? v.scheduled_date ?? v.date ?? "",
+  status:         v.status ?? "pending"
+});
+
 async function load() {
   S.errors = [];
   const [diagnoses, sensors, visits, requests, convs] = await Promise.all([
     pull(appDB,"diagnoses","created_at"), pull(appDB,"sensors","created_at"), pull(appDB,"visits","created_at"),
     pull(appDB,"requests","created_at"), pullConvs()]);
-  S.data = { diagnoses, sensors, visits, requests, convs };
+  S.data = { diagnoses, sensors, visits: visits.map(normVisit), requests, convs };
   render();
 }
 async function openChat(id) {
