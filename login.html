@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head><title>CoopIQ | Sign in</title><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="img/logo-sm.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="css/app.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script><script src="js/config.js"></script></head>
+<body class="authpage" data-page="login"><div class="auth">
+<img class="logo" src="img/logo.png" alt="CoopIQ logo"><p class="tag">Photo in. Diagnosis out. Before it spreads.</p>
+<div class="card"><h2 id="title">Welcome back</h2>
+<form id="form" class="form" novalidate>
+<div id="extra" hidden class="form"><div><label for="name">Full name</label><input id="name" autocomplete="name"></div><div><label for="phone">Phone number</label><input id="phone" type="tel" autocomplete="tel"></div></div>
+<div><label for="email">Email</label><input id="email" type="email" autocomplete="email" required></div>
+<div><label for="pass">Password</label><input id="pass" type="password" minlength="6" required></div>
+<button type="button" class="link" id="forgot" style="align-self:flex-end">Forgot password?</button>
+<p id="msg" class="msgbox" role="status"></p>
+<button type="button" class="link" id="resend" hidden>Resend confirmation email</button>
+<button class="btn p" id="go" type="submit">Sign in</button>
+<button type="button" class="link" id="toggle">New here? Create an account</button>
+</form></div></div>
+<script>if(new URLSearchParams(location.search).get("denied"))document.getElementById("msg").textContent="That account doesn't have admin access.";</script>
+<script src="js/auth.js"></script></body></html>
