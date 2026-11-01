@@ -69,18 +69,54 @@ async function pull(db, key, order) {
   if (error) { S.errors.push(`${CFG.tables[key]}: ${error.message}`); return []; }
   return data || [];
 }
+
+/* Chatbot DB stores one flat row per message in chat_messages
+   (id, sender, role, content, created_at). Build the conversation list from it:
+   one conversation per sender (phone number), using that sender's latest message. */
+async function pullConvs() {
+  if (S.demo) return DEMO.convs;
+  if (!botDB) return [];
+  const { data, error } = await botDB.from("chat_messages").select("*")
+    .order("created_at", { ascending: false }).limit(1000);
+  if (error) { S.errors.push(`chat_messages: ${error.message}`); return []; }
+  const latest = {};
+  for (const m of data || []) if (!latest[m.sender]) latest[m.sender] = m;   // newest first, so first seen = latest
+  return Object.values(latest).map(m => {
+    const mins = (Date.now() - new Date(m.created_at)) / 60000;
+    const waiting = m.role === "user";                // last message is from the farmer, no reply yet
+    return {
+      id: m.sender,
+      name: "",                                       // no name column in chat_messages; falls back to phone
+      phone: "+" + m.sender,
+      last_message: m.content,
+      needs_reply: waiting,
+      status: waiting || mins < 1440 ? "open" : "resolved",
+      updated_at: m.created_at
+    };
+  }).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+}
+
 async function load() {
   S.errors = [];
   const [diagnoses, sensors, visits, requests, convs] = await Promise.all([
     pull(appDB,"diagnoses","created_at"), pull(appDB,"sensors","created_at"), pull(appDB,"visits","created_at"),
-    pull(appDB,"requests","created_at"), pull(botDB,"convs","updated_at")]);
+    pull(appDB,"requests","created_at"), pullConvs()]);
   S.data = { diagnoses, sensors, visits, requests, convs };
   render();
 }
 async function openChat(id) {
   S.chat = id;
   if (S.demo) S.msgs = DEMO.msgs.filter(m => m.conversation_id == id);
-  else if (botDB) { const { data } = await botDB.from(CFG.tables.msgs).select("*").eq("conversation_id", id).order("created_at"); S.msgs = data || []; }
+  else if (botDB) {
+    const { data, error } = await botDB.from("chat_messages").select("*")
+      .eq("sender", id).order("created_at", { ascending: true });
+    if (error) S.errors.push(`chat_messages: ${error.message}`);
+    S.msgs = (data || []).map(m => ({
+      direction: m.role === "user" ? "in" : "out",
+      body: m.content,
+      created_at: m.created_at
+    }));
+  }
   render();
 }
 
@@ -152,7 +188,7 @@ const PAGES = {
   settings: ["Settings", "Database connections and workspace status.", () => {
     const row = (n, db) => `<div class="row"><div class="m"><b>${n}</b></div>${pill(db ? "Connected" : "Not configured", db ? "" : "warn")}</div>`;
     return `<section class="card"><h3>Connections</h3><p>Set URLs and anon keys in js/config.js.</p>
-      ${row("App database: auth, diagnoses, sensors, visits, requests", appDB)}${row("Chatbot database: conversations, messages", botDB)}
+      ${row("App database: auth, diagnoses, sensors, visits, requests", appDB)}${row("Chatbot database: chat_messages", botDB)}
       ${row("Admin allowlist: " + (CFG.adminEmails.length ? CFG.adminEmails.length + " email(s)" : "off, any signed-in user can enter"), CFG.adminEmails.length)}
       ${S.errors.map(e => `<div class="row"><div class="m"><b>Query error</b><span>${esc(e)}</span></div>${pill("Check RLS or table name","bad")}</div>`).join("")}</section>`;
   }]
