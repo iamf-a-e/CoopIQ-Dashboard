@@ -107,12 +107,21 @@ const normVisit = v => ({
   status:         v.status ?? "pending"
 });
 
+/* consultations columns: id, requester_id, name, phone, email, urgency, details, diagnosis_id, status, assigned_to, created_at, updated_at */
+const normRequest = r => ({
+  ...r,
+  farmer_name: r.name ?? "",
+  urgency:     r.urgency ?? "Standard",
+  message:     r.details ?? r.message ?? "",
+  status:      r.status ?? "open"
+});
+
 async function load() {
   S.errors = [];
   const [diagnoses, sensors, visits, requests, convs] = await Promise.all([
     pull(appDB,"diagnoses","created_at"), pull(appDB,"sensors","created_at"), pull(appDB,"visits","created_at"),
     pull(appDB,"requests","created_at"), pullConvs()]);
-  S.data = { diagnoses, sensors, visits: visits.map(normVisit), requests, convs };
+  S.data = { diagnoses, sensors, visits: visits.map(normVisit), requests: requests.map(normRequest), convs };
   render();
 }
 async function openChat(id) {
